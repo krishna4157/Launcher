@@ -1,12 +1,12 @@
 buildscript {
-    ext.kotlin_version = '1.5.0'
+    ext.kotlin_version = '1.6.21'
     repositories {
         google()
         jcenter()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.0.2'
+        classpath 'com.android.tools.build:gradle:7.4.2'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
@@ -23,7 +23,22 @@ subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
 subprojects {
+    afterEvaluate { subproject ->
+        if (subproject.name == 'launcher_assist') {
+            subproject.android.compileSdkVersion 29
+        }
+    }
     project.evaluationDependsOn(':app')
+    buildscript {
+        repositories {
+            google()
+            jcenter()
+        }
+        dependencies {
+            classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.5.20"
+        }
+    }
+        
 }
 
 task clean(type: Delete) {

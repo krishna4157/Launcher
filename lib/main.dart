@@ -1025,3 +1025,8 @@ class AppDrawerIcon extends StatelessWidget {
         ]);
   }
 }
+
+
+///
+// 2.10.5 flutter
+///

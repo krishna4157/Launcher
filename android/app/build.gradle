@@ -65,6 +65,7 @@ android {
             signingConfig signingConfigs.release
         }
     }
+    namespace 'com.example.launcher'
 }
 
 flutter {
@@ -72,5 +73,5 @@ flutter {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 }

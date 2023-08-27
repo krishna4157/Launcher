@@ -26,7 +26,7 @@ dependencies:
   url_launcher : 6.0.3
   battery : 2.0.1
   battery_info: 1.0.7
-  fluttertoast: 7.1.8
+  fluttertoast: 8.2.2
   page_transition: "^1.1.7+6"
   shared_preferences: ^2.0.5
   intent : 1.4.0
