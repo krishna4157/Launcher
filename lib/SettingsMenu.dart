@@ -45,6 +45,8 @@ class CardExampleState extends StatefulWidget {
 class _CardExampleState extends State<CardExampleState> {
    List<bool> _wallPaperStat = <bool>[false, true];
    List<bool> _iconStat = <bool>[true, false];
+   List<bool> _batteryStat = <bool>[false, true];
+
 // create some values
   Color accentColor = Color(0xff443a49);
   Color currentColor;
@@ -64,6 +66,7 @@ class _CardExampleState extends State<CardExampleState> {
      super.initState();
      getWallPaperStat();
      getIconStatAndColor();
+     getbatteryWallPaperStat();
    }
   static const List<Widget> Switch = <Widget>[
     Text('ON'),
@@ -147,6 +150,47 @@ class _CardExampleState extends State<CardExampleState> {
                     minWidth: 80.0,
                   ),
                   isSelected: _iconStat,
+                  children: Switch,
+                ),]
+          ),
+        ),
+        Container(
+          height: 50,
+          // color: Colors.amber[500],
+          child:  Row(
+
+              children : [
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Show Time Wallpaper',style: TextStyle(color: Colors.white),),
+                    Text('Note : Show Wallpaper has to be enabled',style: TextStyle(height:2,fontSize: 10,color: Colors.white),)
+                  ],
+                ),
+                Spacer(),
+                ToggleButtons(
+                  direction:  Axis.horizontal,
+                  onPressed: (int index) {
+                    setState(() {
+                      // The button that is tapped is set to true, and the others to false.
+                      for (int i = 0; i < _batteryStat.length; i++) {
+                        _batteryStat[i] = i == index;
+                      }
+                    });
+                    var iconStatusIndex = _batteryStat.indexOf(true);
+                    storeStat('BatteryStat',iconStatusIndex,'int');
+                  },
+                  borderRadius: const BorderRadius.all(Radius.circular(8)),
+                  selectedBorderColor: Colors.grey[700],
+                  selectedColor: Colors.white,
+                  fillColor: Colors.blue,
+                  color: Colors.red[400],
+                  constraints: const BoxConstraints(
+                    minHeight: 40.0,
+                    minWidth: 80.0,
+                  ),
+                  isSelected: _batteryStat,
                   children: Switch,
                 ),]
           ),
@@ -478,6 +522,18 @@ class _CardExampleState extends State<CardExampleState> {
       _wallPaperStat[s] = true;
       setState(() {
         _wallPaperStat = _wallPaperStat;
+      });
+    }
+  }
+
+  getbatteryWallPaperStat () async {
+    final prefs = await SharedPreferences.getInstance();
+    var s = prefs.getInt('BatteryStat');
+    if(s != null) {
+      _batteryStat = [false,false];
+      _batteryStat[s] = true;
+      setState(() {
+        _batteryStat = _batteryStat;
       });
     }
   }

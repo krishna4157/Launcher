@@ -362,17 +362,24 @@ class _AppsDrawerState extends State<AppsDrawer> with TickerProviderStateMixin, 
             children: <Widget>[
               Image.asset(
                 'assets/images/dino.gif',
-                height: 250,
-                width: 250,
+                height: 150,
+                width: 150,
                 fit: BoxFit.contain,
               ),
-              Text(
-                'Loading',
-                style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.white,
-                    decorationStyle: TextDecorationStyle.dashed),
+              Center(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(20, 0, 20, 0),
+                  child: Text(
+                    'Please wait while we cache the Applications to save Battery',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.white,
+                        decorationStyle: TextDecorationStyle.dashed),
+                  ),
+                ),
               )
+
             ],
           )));
     }

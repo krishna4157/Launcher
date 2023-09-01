@@ -1,4 +1,4 @@
-package com.example.launcher;
+package com.hks.smartPowerLauncher;
 
 import androidx.annotation.NonNull;
 
@@ -11,6 +11,8 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.view.View;
+
 import androidx.annotation.Nullable;
 
 public class MainActivity extends FlutterActivity {
