@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
+import 'dart:typed_data';
 import 'package:battery_info/battery_info_plugin.dart';
 import 'package:battery_info/enums/charging_status.dart';
 import 'package:battery_info/model/android_battery_info.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_gifimage/flutter_gifimage.dart';
 import 'package:smart_power_launcher/SettingsMenu.dart';
 import 'package:smart_power_launcher/Charging.dart';
 import 'package:device_apps/device_apps.dart';
@@ -20,6 +22,8 @@ import 'alphabetListView.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:launcher_assist/launcher_assist.dart';
 import 'dart:ui' as ui;
+import 'package:image/image.dart' as img;
+import 'package:http/http.dart' as http;
 
 var onLoaded = false;
 
@@ -27,10 +31,9 @@ var isNotPresent = false;
 var isVisible = false;
 var batteryPercentage;
 var switchState = 'on';
+
 GlobalKey _globalKey = GlobalKey();
-// List<CellData> matrixValues =
-//     List<CellData>.generate(20, (index) => CellData(0.0, index));
-// StreamSubscription _volumeButtonSubscription;
+
 var onChangeIcon = false;
 
 var i = 0;
@@ -45,13 +48,13 @@ class CellData {
 }
 
 void main() {
-  // GestureBinding.instance.resamplingEnabled = true;
-  // final VoidCallback callback =() =>{};
+  SystemChrome.setEnabledSystemUIOverlays([]);
 
   runApp(Shortcuts(
       shortcuts: <LogicalKeySet, Intent>{
         LogicalKeySet(LogicalKeyboardKey.select): ActivateIntent(),
       },
+      // Navigation Pages
       child:
           MaterialApp(home: HomeLauncherPage(), // becomes the route named '/'
               routes: <String, WidgetBuilder>{
@@ -61,6 +64,7 @@ void main() {
           })));
 }
 
+// dail phone number on long press
 _launchCaller(val) async {
   var url = "tel:$val";
   if (await canLaunch(url)) {
@@ -142,7 +146,7 @@ class _StartPageState extends State<StartPage>
   var buttonColor = Colors.transparent;
   Timer checkGlobalKey;
   var showTime = false;
-
+  Offset _tapPosition = Offset.zero;
 
   @override
   void didUpdateWidget(StartPage oldWidget) {
@@ -167,7 +171,7 @@ class _StartPageState extends State<StartPage>
       });
       if (batteryInfo.chargingStatus == ChargingStatus.Charging) {
         if (z == 'ChargingStatus.Charging' && hideCharging != true) {
-          Future.delayed(Duration(seconds: 10), () {
+          Future.delayed(Duration(seconds: 5), () {
             setState(() {
               hideCharging = true;
             });
@@ -362,15 +366,16 @@ class _StartPageState extends State<StartPage>
     Future.delayed(Duration(seconds: 1), () async {
       var colorsList = [
         Colors.red,
-        Colors.green,
-        Colors.blue,
-        Colors.orange,
+        Colors.green.withOpacity(0.5),
+        Colors.blue.withOpacity(0.5),
+        Colors.orange.withOpacity(0.5),
         Colors.purple,
-        Colors.yellow,
-        Colors.teal,
-        Color.fromRGBO(230, 230, 250, 1.0),
-        Color.fromRGBO(57, 255, 20, 1.0),
-        Color.fromRGBO(128, 0, 32, 1.0),
+        Colors.yellow.withOpacity(0.5),
+        Colors.teal.withOpacity(0.5),
+        Colors.white.withOpacity(0.5),
+        Color.fromRGBO(230, 230, 250, 0.5),
+        Color.fromRGBO(57, 255, 20, 0.5),
+        Color.fromRGBO(128, 0, 32, 0.5),
       ];
       var _randomColor = new Random();
 
@@ -499,7 +504,7 @@ class _StartPageState extends State<StartPage>
             },
             onFocusGained: () {
 
-              // SystemChrome.setEnabledSystemUIOverlays([SystemUiOverlay.top]);
+              SystemChrome.setEnabledSystemUIOverlays([]);
               getWallPaperStat();
               checkBatteryLevel();
               checkColorPresent();
@@ -520,6 +525,10 @@ class _StartPageState extends State<StartPage>
               );
             },
             child: GestureDetector(
+
+                onTapDown: (position){
+                    getTapPosition(position);
+                },
                 onVerticalDragUpdate: (details) {
                   int sensitivity = 10;
                   if (details.delta.dy > sensitivity) {
@@ -542,12 +551,14 @@ class _StartPageState extends State<StartPage>
                   resetColorAndChangeOnTap();
                 },
                 onLongPress: () {
-                  Navigator.push(
-                      context,
-                      PageTransition(
-                          type: PageTransitionType.fade,
-                          duration: Duration(milliseconds: 300),
-                          child: SettingsMenu()));
+
+                  showContextMenu(context);
+                  // Navigator.push(
+                  //     context,
+                  //     PageTransition(
+                  //         type: PageTransitionType.fade,
+                  //         duration: Duration(milliseconds: 300),
+                  //         child: SettingsMenu()));
                 },
                 child: Scaffold(
                     resizeToAvoidBottomInset: false,
@@ -876,6 +887,15 @@ class _StartPageState extends State<StartPage>
                                                       color: Colors.black,
                                                     ))),
                                           if (wallpaper != null && batteryImage && showTime)
+                                            if (animcolor != Colors.black)
+                                          Positioned(
+                                              child : Center(
+                                                  heightFactor: 13.2,
+                                                  child :
+                                          Text('${DateFormat('MMMM EEE dd').format(DateTime.now())}', style: TextStyle(fontSize: 30, color: animcolor.withOpacity(0.7), fontFamily:'League-Spartan',fontWeight: FontWeight.normal )))),
+                                          if (wallpaper != null && batteryImage && showTime)
+                                            if (animcolor != Colors.black)
+
                                             Positioned(
 
 
@@ -885,9 +905,28 @@ class _StartPageState extends State<StartPage>
                                                         0,
                                                         0,
                                                         0,
-                                                        80),
-                                                    child: MaskedImage(
-                                                      setOnLoaded: setOnLoaded,
+                                                        0),
+                                                    child:
+                                                    ShaderMask(
+                                                    blendMode: BlendMode.srcATop,
+                                                    shaderCallback: (rect)=> LinearGradient(
+                                                    colors: [animcolor.withOpacity(0.7), animcolor.withOpacity(0.6)],
+                                                    stops: [0.0, 1.0],
+                                                    ).createShader(rect),
+                                                    child :
+                                                    ImageShaderBuilder(
+                                                      imageProvider:
+                                                      AssetImage('assets/images/tumblr.gif'),
+                                                      // NetworkImage(
+                                                        // 'https://media0.giphy.com/media/13mwsrXEUtSyZi/giphy.gif'
+                                                    // 'https://media0.giphy.com/media/bsRSKZhTXgDXa/giphy.gif'
+                                                        // 'https://media2.giphy.com/media/3o85xJY1FaLzqeoBGw/giphy.gif'
+                                                      // 'https://media0.giphy.com/media/ajEzg2TpZfnLdA1BBn/giphy.gif'
+                                                        // 'https://64.media.tumblr.com/0e0ca0386f73c41604556382f5519d33/63e33ca5586600e7-ac/s500x750/0a87761df022a3e6cdbd517c2cbd5b517fb7cac8.gif'
+                                                        // 'https://media.giphy.com/media/5VKbvrjxpVJCM/giphy.gif',
+                                                        // 'https://picsum.photos/1000',
+                                                      // ),
+                                                      // setOnLoaded: setOnLoaded,
                                                       child: Center(
     child : RenderWidget(
         timeColor: timeColor,
@@ -914,10 +953,24 @@ class _StartPageState extends State<StartPage>
                                                       // Text('${batteryPercentage}', textAlign: TextAlign.center,style : TextStyle( fontSize: batteryPercentage > 99 ? 200 : 300, fontWeight: FontWeight.w900)),
                                                       // ],
                                                       // ),
-                                                      image: () {},
-                                                      keyName: _globalKey,
-                                                    ))
+                                                      // image: () {},
+                                                      // keyName: _globalKey,
+                                                    )))
                                                 ),
+                                          // Positioned(
+                                          //   // top: MediaQuery.of(context).size.height/2.24,
+                                          //   child: ImageShaderBuilder(imageProvider: NetworkImage(
+                                          //     'https://media.giphy.com/media/5VKbvrjxpVJCM/giphy.gif',
+                                          //     // 'https://picsum.photos/1000',
+                                          //   ),child: Text('HELLO',
+                                          //     style: TextStyle(
+                                          //       // color: Color(widget.timeColor),
+                                          //         letterSpacing: -25.0,
+                                          //         fontSize: 260,)
+                                          //         // fontFamily: widget.fontFamily,
+                                          //         // fontWeight: widget.fontWeight),
+                                          //   ),),
+                                          // )
                                         ])),
                                   ),
                                   if (z == 'ChargingStatus.Charging' &&
@@ -979,7 +1032,225 @@ class _StartPageState extends State<StartPage>
       _launchCaller('');
     }
   }
+
+  Future<void> showContextMenu(BuildContext context) async {
+    final RenderObject overlay =
+    Overlay.of(context).context.findRenderObject();
+
+    final result = await showMenu(
+        context: context,
+        position: RelativeRect.fromRect(
+            Rect.fromLTWH(_tapPosition.dx, _tapPosition.dy, 100, 100),
+            Rect.fromLTWH(0, 0, overlay.paintBounds.size.width,
+                overlay.paintBounds.size.height)),
+        items: [
+          const PopupMenuItem(
+            child: Text('Settings'),
+            value: "settings",
+          )
+        ]);
+    // perform action on selected menu item
+    switch (result) {
+      case 'settings':
+        print("settings");
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => SettingsMenu()),
+        );
+        break;
+      case 'close':
+        print('close');
+        Navigator.pop(context);
+        break;
+    }
+
+  }
+
+  void getTapPosition(TapDownDetails position) {
+    RenderBox rb = context.findRenderObject() as RenderBox;
+    setStateIfMounted((){
+      _tapPosition = rb.globalToLocal(position.globalPosition);
+    });
+
+  }
 }
+
+class GifShaderMask extends StatelessWidget {
+  final String gifAssetPath;
+  final Shader shader;
+
+  GifShaderMask({ this.gifAssetPath,  this.shader});
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: GifPainter(gifAssetPath: gifAssetPath, shader: shader),
+    );
+  }
+}
+
+class GifPainter extends CustomPainter {
+  final String gifAssetPath;
+  final Shader shader;
+
+  GifPainter({this.gifAssetPath,  this.shader});
+
+  Future<ui.Image> loadGifImage(String gifAssetPath) async {
+    final ByteData data = await rootBundle.load(gifAssetPath);
+    final List<int> bytes = data.buffer.asUint8List();
+    final img.Image image = img.decodeGif(bytes);
+    final Completer<ui.Image> completer = Completer<ui.Image>();
+
+    final codec = await ui.instantiateImageCodec(Uint8List.fromList(bytes));
+    final frameInfo = await codec.getNextFrame();
+    completer.complete(frameInfo.image);
+
+    return completer.future;
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) async {
+    final ui.Image image = await loadGifImage(gifAssetPath);
+
+    final paint = Paint()
+      ..shader = shader;
+
+    canvas.drawImage(image, Offset.zero, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return false;
+  }
+}
+
+
+ class ImageShaderBuilder extends StatefulWidget {
+  const ImageShaderBuilder({
+
+    this.imageProvider,
+    // Add child widget
+    this.child,
+  });
+
+  // Add child widget
+  final Widget child;
+  final ImageProvider imageProvider;
+
+  @override
+  State<ImageShaderBuilder> createState() => _ImageShaderBuilderState();
+}
+
+class _ImageShaderBuilderState extends State<ImageShaderBuilder> {
+  ImageStream _imageStream;
+  ImageInfo _imageInfo;
+
+  // Create image shader for given Rect size
+  ShaderCallback createImageShader(ui.Image image) {
+    shaderCalback(Rect bounds) {
+      // Calculate scale for X and Y sides
+      final scaleX = bounds.width / image.width;
+      final scaleY = bounds.height / image.height;
+      final scale = max(scaleX, scaleY);
+
+      // Calculate offset to center resized image
+      final scaledImageWidth = image.width * scale;
+      final sacledImageHeight = image.height * scale;
+      final offset = Offset(
+        (scaledImageWidth - bounds.width) / 2,
+        (sacledImageHeight - bounds.height) / 2,
+      );
+      final matrix = Matrix4.identity()
+      // Scale image horizontally and vertically
+        ..scale(scale, scale)
+      // Center horizontally and vertically
+        ..leftTranslate(
+          -offset.dx,
+          -offset.dy,
+        );
+
+      // Image shader
+      return ImageShader(
+        image,
+        TileMode.decal,
+        TileMode.decal,
+        matrix.storage,
+      );
+    }
+
+    return shaderCalback;
+  }
+
+  // Change Build function
+  @override
+  Widget build(BuildContext context) {
+    final image = _imageInfo?.image;
+    // No image for shader -> show child
+    if (image == null) {
+      return widget.child;
+    }
+    final shaderCallback = createImageShader(image);
+    // Apply shader to the child
+    return  ShaderMask(
+      blendMode: BlendMode.srcATop,
+      shaderCallback: shaderCallback,
+      child: widget.child,
+    );
+  }
+
+  // Keep source code
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // We call _getImage here because createLocalImageConfiguration() needs to
+    // be called again if the dependencies changed, in case the changes relate
+    // to the DefaultAssetBundle, MediaQuery, etc, which that method uses.
+    _getImage();
+  }
+
+  @override
+  void didUpdateWidget(ImageShaderBuilder oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.imageProvider != oldWidget.imageProvider) {
+      _getImage();
+    }
+  }
+
+  void _getImage() {
+    final ImageStream oldImageStream = _imageStream;
+    _imageStream =
+        widget.imageProvider.resolve(createLocalImageConfiguration(context));
+    if (_imageStream.key != oldImageStream?.key) {
+      // If the keys are the same, then we got the same image back, and so we don't
+      // need to update the listeners. If the key changed, though, we must make sure
+      // to switch our listeners to the new image stream.
+      final ImageStreamListener listener = ImageStreamListener(_updateImage);
+      oldImageStream?.removeListener(listener);
+      _imageStream.addListener(listener);
+    }
+  }
+
+  void _updateImage(ImageInfo imageInfo, bool synchronousCall) {
+    setState(() {
+      // Trigger a build whenever the image changes.
+      _imageInfo?.dispose();
+      _imageInfo = imageInfo;
+    });
+  }
+
+  @override
+  void dispose() {
+    _imageStream?.removeListener(ImageStreamListener(_updateImage));
+    _imageInfo?.dispose();
+    _imageInfo = null;
+    super.dispose();
+  }
+}
+
+
+
+
 
 class MaskedImage extends StatelessWidget {
   final image;
@@ -1003,6 +1274,41 @@ class MaskedImage extends StatelessWidget {
     return child;
   }
 
+  Future<ui.Image> _loadNetworkGif() async {
+    // final response = await http.get(Uri.parse('https://media.giphy.com/media/5VKbvrjxpVJCM/giphy.gif'));
+    final ByteData data = await rootBundle.load('assets/images/tumblr.gif');
+    data.buffer.asUint8List();
+      // final Uint8List bytes = response.bodyBytes;
+      // final img.Image image = img.decodeGif(bytes);
+      final Completer<ui.Image> completer = Completer<ui.Image>();
+    ui.decodeImageFromList(data.buffer.asUint8List(), (result) {
+      completer.complete(result);
+    });
+    onLoaded = true;
+      return completer.future;
+  }
+
+
+  Future<ui.Image> onLoadImage() async {
+    print('HIHIHIHIHIHI');
+    final ByteData data = await rootBundle.load('assets/images/tumblr.gif');
+    print('HIHIHIHIHIHI2');
+
+    final List<int> bytes = data.buffer.asUint8List();
+    print('HIHIHIHIHIHI3');
+
+    // final img.Image image = img.decodeGif(bytes);
+    final Completer<ui.Image> completer = Completer<ui.Image>();
+    print('HIHIHIHIHIHI4');
+
+    final codec = await ui.instantiateImageCodec(Uint8List.fromList(bytes));
+    final frameInfo = await codec.getNextFrame();
+    completer.complete(frameInfo.image);
+    print('HIHIHIHIHIHI5');
+    onLoaded = true;
+    return completer.future;
+  }
+
   Future<ui.Image> captureWidgetToImage(BuildContext context) async {
     print('succesws :');
     // setOnLoaded(false);
@@ -1010,7 +1316,7 @@ class MaskedImage extends StatelessWidget {
 
     RenderRepaintBoundary boundary =
         keyName.currentContext.findRenderObject() as RenderRepaintBoundary;
-    ui.Image image = await boundary.toImage(pixelRatio: 0.83);
+    ui.Image image = await boundary.toImage(pixelRatio: 0.96);
     print('succesws1 :' + image.toString());
     // setOnLoaded(true);
     onLoaded = true;
@@ -1033,10 +1339,45 @@ class MaskedImage extends StatelessWidget {
     // return completer.future;
   }
 
+  ShaderCallback createImageShader(ui.Image image) {
+     shaderCalback(Rect bounds) {
+      // Calculate scale for X and Y sides
+      final scaleX = bounds.width / image.width;
+      final scaleY = bounds.height / image.height;
+      final scale = max(scaleX, scaleY);
+      // Calculate offset to center resized image
+      final scaledImageWidth = image.width * scale;
+      final sacledImageHeight = image.height * scale;
+      final offset = Offset(
+        (scaledImageWidth - bounds.width) / 2,
+        (sacledImageHeight - bounds.height) / 2,
+      );
+      final matrix = Matrix4.identity()
+      // Scale image
+        ..scale(scale, scale)
+      // Center horizontally and vertically
+        ..leftTranslate(
+          -offset.dx,
+          -offset.dy,
+        );
+
+      // Image shader
+      return ImageShader(
+        image,
+        TileMode.decal,
+        TileMode.decal,
+        matrix.storage,
+      );
+    }
+    return shaderCalback;
+  }
+
+
   @override
   Widget build(BuildContext context) {
     // TODO: implement build
     return
+      // Container();
         // image;
         //   Padding(padding: EdgeInsets.all(1.0),
         //     child:
@@ -1051,28 +1392,189 @@ class MaskedImage extends StatelessWidget {
         //     MemoryImage(image))))
         // );
         FutureBuilder<ui.Image>(
-            future: captureWidgetToImage(keyName.currentContext),
+          // future: onLoadImage(),
+            future : _loadNetworkGif(),
+            // future: captureWidgetToImage(keyName.currentContext),
             builder: (context, snap) => snap.hasData
                 ? ShaderMask(
-                    blendMode: BlendMode.srcATop,
-                    shaderCallback: (data) => ImageShader(
+                    blendMode: BlendMode.src,
+                    shaderCallback:
+                        (Rect bounds) {
+                      // Calculate scale for X and Y sides
+                      final scaleX = bounds.width / snap.data.width;
+                      final scaleY = bounds.height / snap.data.height;
+                      final scale = max(scaleX, scaleY);
+                      // Calculate offset to center resized image
+                      final scaledImageWidth = snap.data.width * scale;
+                      final sacledImageHeight = snap.data.height * scale;
+                      final offset = Offset(
+                        (scaledImageWidth - bounds.width) / 2,
+                        (sacledImageHeight - bounds.height) / 2,
+                      );
+                      final matrix = Matrix4.identity()
+                      // Scale image
+                        ..scale(scale, scale)
+                      // Center horizontally and vertically
+                        ..leftTranslate(
+                          -offset.dx,
+                          -offset.dy,
+                        );
+
+                      // Image shader
+                      return ImageShader(
                         snap.data,
-                        TileMode.clamp,
-                        TileMode.clamp,
-                        Matrix4.identity().storage),
+                        TileMode.decal,
+                        TileMode.decal,
+                        matrix.storage,
+                      );
+                    },
                     child: child,
                   )
                 : Container());
-    //   ShaderMask(
-    //     blendMode: BlendMode.src,
-    //     shaderCallback: (data) => ImageShader(snap.data,TileMode.clamp,TileMode.clamp,Matrix4.identity().storage), child:
-    //   child,)
-    // //   child
-    // : Container());
 
     // image;
     // : Container()
     // );
+  }
+}
+
+
+class AnimatedGifShaderMask extends StatefulWidget {
+  final String gifAssetPath;
+
+  AnimatedGifShaderMask({ this.gifAssetPath});
+
+  @override
+  _AnimatedGifShaderMaskState createState() => _AnimatedGifShaderMaskState();
+}
+
+class NetworkGifToUiImage extends StatefulWidget {
+  final String gifUrl;
+
+  NetworkGifToUiImage({ this.gifUrl});
+
+  @override
+  _NetworkGifToUiImageState createState() => _NetworkGifToUiImageState();
+}
+
+class _NetworkGifToUiImageState extends State<NetworkGifToUiImage> {
+  ui.Image _uiImage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNetworkGif();
+  }
+
+  Future<void> _loadNetworkGif() async {
+    final response = await http.get(Uri.parse(widget.gifUrl));
+    if (response.statusCode == 200) {
+      final Uint8List bytes = response.bodyBytes;
+
+      final img.Image image = img.decodeGif(bytes);
+
+      final Completer<ui.Image> completer = Completer<ui.Image>();
+      ui.decodeImageFromList(Uint8List.fromList(image.getBytes()), (result) {
+        completer.complete(result);
+      });
+
+      final uiImage = await completer.future;
+      setState(() {
+        _uiImage = uiImage;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: _uiImage != null
+          ? CustomPaint(
+        painter: GifImagePainter(uiImage: _uiImage),
+      )
+          : CircularProgressIndicator(),
+    );
+  }
+}
+
+
+class GifImagePainter extends CustomPainter {
+  final ui.Image uiImage;
+
+  GifImagePainter({ this.uiImage});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawImage(uiImage, Offset.zero, Paint());
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return false;
+  }
+}
+
+
+class _AnimatedGifShaderMaskState extends State<AnimatedGifShaderMask> with SingleTickerProviderStateMixin  {
+  GifController _controller; // Make it nullable
+  double _animationValue = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = GifController(vsync: this);
+    _controller.value = 0;
+    _controller.repeat(min: 0, max: 59, period: Duration(seconds: 5));
+  }
+
+  ShaderCallback createImageShader(ui.Image image) {
+    shaderCalback(Rect bounds) {
+      // Calculate scale for X and Y sides
+      final scaleX = bounds.width / image.width;
+      final scaleY = bounds.height / image.height;
+      final scale = max(scaleX, scaleY);
+      // Calculate offset to center resized image
+      final scaledImageWidth = image.width * scale;
+      final sacledImageHeight = image.height * scale;
+      final offset = Offset(
+        (scaledImageWidth - bounds.width) / 2,
+        (sacledImageHeight - bounds.height) / 2,
+      );
+      final matrix = Matrix4.identity()
+      // Scale image
+        ..scale(scale, scale)
+      // Center horizontally and vertically
+        ..leftTranslate(
+          -offset.dx,
+          -offset.dy,
+        );
+      // Image shader
+      return ImageShader(
+        image,
+        TileMode.decal,
+        TileMode.decal,
+        matrix.storage,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    //  gifProvider = Image.network(
+    //   'https://media.giphy.com/media/5VKbvrjxpVJCM/giphy.gif',
+    // );
+    // final shaderCallback = createImageShader();
+
+    return GifImage(
+      controller: _controller,
+      image: AssetImage(widget.gifAssetPath),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose(); // Dispose of the controller if it's not null
+    super.dispose();
   }
 }
 
@@ -1124,6 +1626,7 @@ class _CustomWidgetState extends State<RenderWidget>
   void dispose() {
     // if(timer)
     // timer.cancel();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -1212,46 +1715,45 @@ class _CustomWidgetState extends State<RenderWidget>
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                    Text('${DateFormat('hh').format(DateFormat('h:mm').parse(formattedDate))}',
-                      style: TextStyle(
+                    Opacity(
+                      opacity: 0.8,
+                        child : Text(
+                          '${DateFormat('hh').format(DateFormat('h:mm').parse(formattedDate))}',
+                      style:
+                      TextStyle(
+                        // backgroundColor: Colors.red,
                         // color: Color(widget.timeColor),
+
                           letterSpacing: -25.0,
-                          fontSize:  260,
+                          fontSize:  270,
                           fontFamily: widget.fontFamily,
                           fontWeight: widget.fontWeight),
-                    ),
+                    )),
                         Container(
                           width: 100,
                             height: 100,
                         ),]),
 
                     Positioned(
-                      top: MediaQuery.of(context).size.height/2.4,
+                      top: MediaQuery.of(context).size.height/2.24,
                         child: Text('${DateFormat('mm').format(DateFormat('h:mm').parse(formattedDate))}',
                       style: TextStyle(
                         // color: Color(widget.timeColor),
                           letterSpacing: -25.0,
-                          fontSize: 260,
+                          fontSize: 270,
                           fontFamily: widget.fontFamily,
                           fontWeight: widget.fontWeight),
                     )),
                     Positioned(
-                        top: MediaQuery.of(context).size.height/2.4,
+                        top: MediaQuery.of(context).size.height/2.24,
                         child: Text('${DateFormat('mm').format(DateFormat('h:mm').parse(formattedDate))}',
                           style: TextStyle(
                             // color: Color(widget.timeColor),
                               letterSpacing: -25.0,
-                              fontSize: widget.renderImage
-                                  ? 260
-                                  : double.parse(widget.timeSize
-                                  .toString()) >
-                                  80
-                                  ? 80
-                                  : double.parse(
-                                  widget.timeSize.toString()),
+                              fontSize: 270,
                               fontFamily: widget.fontFamily,
                               fontWeight: widget.fontWeight),
-                        ))
+                        )),
 
                   ],
                 )

@@ -48,6 +48,9 @@ dependencies:
   flutter_colorpicker: ^1.0.3
   rainbow_color: ^2.0.1
   flutter_launcher_icons: ^0.11.0
+  flutter_svg: ^1.0.3
+  flutter_gifimage: ^1.0.1
+  http: ^0.13.5
 
 dev_dependencies:
   flutter_test:
@@ -84,10 +87,13 @@ flutter:
       fonts:
         - asset: assets/fonts/Montserrat-Light.otf
         - asset: assets/fonts/Montserrat-Regular.otf
-  #   - family: Trajan Pro
-  #     fonts:
-  #       - asset: fonts/TrajanPro.ttf
-  #       - asset: fonts/TrajanPro_Bold.ttf
+    - family: Cheri
+      fonts:
+         - asset: assets/fonts/CHERI.TTF
+         - asset: assets/fonts/CHERL.TTF
+    - family: League-Spartan
+      fonts:
+        - asset: assets/fonts/LeagueSpartan-Bold.otf
   #         weight: 700
   #
   # For details regarding fonts from package dependencies,

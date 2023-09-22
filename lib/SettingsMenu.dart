@@ -14,12 +14,10 @@ class SettingsMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
+    return Scaffold(
         appBar: AppBar(title: const Text('Launcher Settings'), backgroundColor: Colors.black,),
         body:  CardExample(),
-      ),
-    );
+      );
   }
 }
 
@@ -42,7 +40,7 @@ class CardExampleState extends StatefulWidget {
 
 }
 
-class _CardExampleState extends State<CardExampleState> {
+class _CardExampleState extends State<CardExampleState> with TickerProviderStateMixin, WidgetsBindingObserver {
    List<bool> _wallPaperStat = <bool>[false, true];
    List<bool> _iconStat = <bool>[true, false];
    List<bool> _batteryStat = <bool>[false, true];
@@ -64,10 +62,31 @@ class _CardExampleState extends State<CardExampleState> {
    @override
    void initState() {
      super.initState();
+     WidgetsBinding.instance.addObserver(this);
      getWallPaperStat();
      getIconStatAndColor();
      getbatteryWallPaperStat();
    }
+
+  @override
+  void dispose() {
+    super.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+  }
+
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state){
+     print('called : '+mounted.toString());
+    if((state == AppLifecycleState.inactive || state == AppLifecycleState.paused) && mounted == true){
+      print('called 1234: '+state.toString());
+      if(Navigator.canPop(context)) {
+        print('called 1235: '+state.toString());
+        Navigator.of(context).pop();
+      }
+    }
+  }
+
   static const List<Widget> Switch = <Widget>[
     Text('ON'),
     Text('OFF'),

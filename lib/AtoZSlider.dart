@@ -316,7 +316,7 @@ class _AtoZSlider extends State<AtoZSlider> {
                           child: ListView.builder(
                             physics: BouncingScrollPhysics(),
                             controller: _scrollController,
-                            padding: EdgeInsets.all(8.0),
+                            padding: EdgeInsets.fromLTRB(8.0,8.0,8.0,100.0),
                             itemExtent: _itemsizeheight,
                             itemCount: _itemscache.length,
                             itemBuilder: (BuildContext context, int index) {

@@ -31,7 +31,6 @@ class Charging extends StatelessWidget {
 // class MyClipPath extends StatelessWidget{
 class MyClipPath extends AnimatedWidget {
   final Animation<double> animation;
-  // final int batteryPercentage;
 
   final double height;
 
@@ -46,8 +45,28 @@ class MyClipPath extends AnimatedWidget {
       onTap: () {
         // setInitialValue();
       },
-      child: Stack(children: <Widget>[
-        Column(
+      child:   Stack(children: <Widget>[
+      ShaderMask(
+      blendMode: BlendMode.srcATop,
+        shaderCallback: (rect)=> LinearGradient(
+          colors: [(batteryPercentage < 15
+              ? Colors.red
+              : batteryPercentage < 75
+              ? Colors.orange
+              : batteryPercentage < 95
+              ? Colors.blueAccent
+              : Colors.green).withOpacity(0.6), (batteryPercentage < 15
+              ? Colors.red
+              : batteryPercentage < 75
+              ? Colors.orange
+              : batteryPercentage < 95
+              ? Colors.blueAccent
+              : Colors.green).withOpacity(0.6)],
+          stops: [0.0, 1.0],
+        ).createShader(rect),
+        child : ImageShaderBuilder(
+            imageProvider: AssetImage('assets/images/bw.gif'),
+            child :Column(
           children: [
             // SizedBox(height: 50),
             // Text(
@@ -59,10 +78,12 @@ class MyClipPath extends AnimatedWidget {
             //   padding: const EdgeInsets.all(28.0),
             //   child: FlutterLogo(size: 200.0),
             // ),
-            Expanded(
+
+         Expanded(
               flex: 1,
 
-              child: Stack(
+              child:
+              Stack(
 
                   children: [
                 Positioned(
@@ -73,12 +94,12 @@ class MyClipPath extends AnimatedWidget {
                     child: Opacity(
                       opacity: 1,
                       child: AnimatedContainer(
-                        duration: Duration(seconds: 2),
+                        duration: Duration(seconds: 1),
                         color: batteryPercentage < 15
                             ? Colors.red
                             : batteryPercentage < 75
                                 ? Colors.orange
-                                : batteryPercentage == 100
+                            : batteryPercentage < 95
                                     ? Colors.blueAccent
                                     : Colors.green,
                         width: 3000,
@@ -95,7 +116,7 @@ class MyClipPath extends AnimatedWidget {
                     child: Opacity(
                       opacity: 0.5,
                       child: AnimatedContainer(
-                        duration: Duration(seconds: 2),
+                        duration: Duration(seconds: 1),
                         color: batteryPercentage < 15
                             ? Colors.red
                             : batteryPercentage < 75
@@ -122,7 +143,7 @@ class MyClipPath extends AnimatedWidget {
                             ? Colors.red
                             : batteryPercentage < 75
                             ? Colors.orange
-                            : batteryPercentage == 100
+                            : batteryPercentage < 95
                             ? Colors.blueAccent
                             : Colors
                             .green), //color is transparent so that it does not blend with the actual color specified
@@ -145,11 +166,11 @@ class MyClipPath extends AnimatedWidget {
                   //             ? Colors.blueAccent
                   //             : Colors.green,
                   height: (height - 40) * (batteryPercentage / 100),
-                  duration: Duration(seconds: 2),
+                  duration: Duration(seconds: 1),
                 )),
 
           ],
-        ),
+        ))),
         Center(
             child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -162,7 +183,7 @@ class MyClipPath extends AnimatedWidget {
                 Text('$batteryPercentage',
                     style: TextStyle(
                       color: Colors.white,
-                      // fontWeight: FontWeight.normal,
+                      fontWeight: FontWeight.w500,
                       fontSize: 120,
                     )),
                 Padding(
@@ -259,15 +280,24 @@ class _MyAnimationState extends State<MyAnimation>
   void initState() {
     super.initState();
     batteryPercentage = 0;
-    getBatteryLevel();
-    batteryPercentage = batteryPercentage;
+    // getBatteryLevel();
+    // batteryPercentage = batteryPercentage;
     _controller =
-        AnimationController(duration: Duration(seconds: 10), vsync: this)
+        AnimationController(duration: Duration(seconds: 6), vsync: this)
           ..repeat();
     animation = Tween<double>(begin: -1260, end: 0).animate(_controller);
     getBatteryLevel().then((value) => setStateIfMounted(() {
-            // print("HELLO WORLD : "+value.toString());
-              batteryPercentage = value;
+            print("HELLO WORLD : "+value.toString());
+            batteryPercentage = 0;
+            Timer timer= Timer.periodic(new Duration(milliseconds: 25), (timer) {
+
+              if(value > batteryPercentage){
+                batteryPercentage = batteryPercentage+1;
+              } else {
+                timer.cancel();
+              }
+              // debugPrint(timer.tick.toString());
+            });
             }));
 
 

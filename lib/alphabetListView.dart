@@ -182,6 +182,7 @@ class _AppsDrawerState extends State<AppsDrawer> with TickerProviderStateMixin, 
       }
 
       if(futureList.isNotEmpty){
+
         Fluttertoast.showToast(
           msg: 'Refrshing Apps',
           toastLength: Toast.LENGTH_LONG,
@@ -235,6 +236,13 @@ class _AppsDrawerState extends State<AppsDrawer> with TickerProviderStateMixin, 
       if(removedEle.isNotEmpty || futureList.isNotEmpty) {
         await prefs.setString('menus', jsonEncode(strList)).then((value) {
           print('End');
+
+          strList.sort((a, b)  {
+            return a['appName'].toString()
+              .toLowerCase()
+              .compareTo(b['appName'].toString().toLowerCase());
+          });
+
           setStateIfMounted(() {
             strList = strList;
             loading = false;
@@ -271,6 +279,7 @@ class _AppsDrawerState extends State<AppsDrawer> with TickerProviderStateMixin, 
   @override
   void dispose() {
     print('DELETED');
+    _controller1.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
